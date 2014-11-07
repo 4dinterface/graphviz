@@ -102,9 +102,6 @@
                 padding:0px;
                 margin:0px;
                 width:100%;
-		-moz-user-select: none;
-                -webkit-user-select: none;
-                user-select: none;
            }
         </style>
 
@@ -115,6 +112,15 @@
         <!--[if lte IE 8]>
             <link rel="stylesheet" type="text/css" href="/css/ie6.css" />
         <![endif]-->
+        <script type="text/javascript" src="./Chrome Experiments - About This Project_files/jquery.min.js">
+        </script>
+        <script type="text/javascript" src="./Chrome Experiments - About This Project_files/jquery-cookie.min.js.pagespeed.ce._kZzNYf4Ha.js">
+        </script>
+        <script type="text/javascript" src="./Chrome Experiments - About This Project_files/app.min.js.pagespeed.ce.8rJ6Hl6djK.js">
+        </script>
+        <script type="text/javascript" src="./Chrome Experiments - About This Project_files/plusone.js"
+        gapi_processed="true">
+        </script>
     </head>
     
     <body id="about">
@@ -129,7 +135,7 @@
         <div id="header" style="background:none;">
             <div class="content">
                 <h1 id="title">
-                  <a href="index.html">
+                    <a href="index.html">
                     NetCentric Graph Viz
                     <span id="tagline">Online demonstration project</span>
                     </a>
@@ -145,10 +151,10 @@
                     <ul id="nav">
                
                         <li class="nav-item submit">
-                            <a href="index2d.html">2d layout</a>
+                            <a href="index2d.html" style="color:white;">2d layout</a>
                         </li>
                         <li class="nav-item mobile-gallery">
-                            <a href="index.html" style="color:white;">3d layout</a>
+                            <a href="index.html">3d layout</a>
                         </li>
                     </ul>
                 </div>
@@ -169,12 +175,13 @@
 	<script src="graph/force-directed-layout.js"> </script>
 	<script src="lib/templateengine.js"> </script>
 
-	<script>GLOBALLAYOUT="3d"</script>
+	<script>GLOBALLAYOUT="2d"</script>
 	<script src="app.js"> </script>
        <!-- ========================================================================================== -->
-
-	<p style="position:absolute; bottom:20px; left:50px; color:#999;" id="location"> Используйте мышь для вращения.</p>
+	
+	<p style="position:absolute; bottom:20px; left:50px; color:#999;" >Используйте мышь для перемещения.</p>
 	<img src="http://net-centric.ru/styles/nc/logo1.png" width="100px" style="bottom:30px;right:50px;position:absolute;opacity:0.7;"/>     
+
     </body>
 
 </html>
