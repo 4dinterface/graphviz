@@ -141,8 +141,11 @@ function GraphView(){
    
    
    this.MouseDown=function(AComp,AEvent){
-      AComp["state"]["mouselastx"]=AEvent.offsetX;    
-      AComp["state"]["mouselasty"]=AEvent.offsetY;
+      AComp["state"]["mouselastx"]=AEvent.clientX    
+      AComp["state"]["mouselasty"]=AEvent.clientY;
+      console.log( AComp["state"]["mouselastx"] );
+      console.log( AComp["state"]["mouselasty"] );
+      
       AComp["state"]["cameradrag"]=true;
    }
    
@@ -155,10 +158,10 @@ function GraphView(){
       if(!AComp["state"]["cameradrag"]) {return};
       
       var xCamera=AComp["state"]["gl"]["camera"];
-      var xMouseOffsetX=(AComp["state"]["mouselastx"]-AEvent.offsetX);
-      var xMouseOffsetY=(AComp["state"]["mouselasty"]-AEvent.offsetY);
+      var xMouseOffsetX=(AComp["state"]["mouselastx"]-AEvent.clientX);
+      var xMouseOffsetY=(AComp["state"]["mouselasty"]-AEvent.clientY);
             
-     
+       console.log(xMouseOffsetX,xMouseOffsetY,AEvent.screenX)
       if(AComp["options"]["layout"]=="2d"){
          //var xZ=15-(xCamera.eye[2]/9);
          //console.log(xZ);
@@ -171,8 +174,8 @@ function GraphView(){
          xCamera.changeOrbitPitch(xMouseOffsetY * 0.001 * timeDelta);
       }
 
-      AComp["state"]["mouselastx"]=AEvent.offsetX;
-      AComp["state"]["mouselasty"]=AEvent.offsetY;
+      AComp["state"]["mouselastx"]=AEvent.clientX;
+      AComp["state"]["mouselasty"]=AEvent.clientY;
    }
    
    //wheel
