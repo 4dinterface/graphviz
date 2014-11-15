@@ -1,84 +1,126 @@
 function WebGlProgram(){ 
    
-   this.CreateTexture=function(gl){
+   this.programs={};
+   
+   //=========================================================================//
+   //=============================== Texture program =========================//
+   //=========================================================================//
+   
+   this.CreateTextureProgram=function(gl){
       var vertexShaderSource =  
-         "  attribute vec3 vertexPos;\n"+
-    
-         "  attribute vec2 a_texcoord;\n"+
-         "  varying vec2 v_texcoord;\n"+
-
-         "  uniform mat4 projectionMatrix;\n"+//u_worldViewProjection;
-         "  uniform mat4 modelViewMatrix;\n"+
-
-         "  void main() {\n"+
-         "     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPos, 1.0);\n"+
-         "     v_texcoord = a_texcoord;\n"+
-         "  }\n";
+         "  attribute vec3 aVertexPosition;"+
+         "  attribute vec2 aVertexTextureCoords;"+
+         "  varying vec2 vTextureCoords;"+
+         "  uniform mat4 uMVMatrix;"+
+         "  uniform mat4 uPMatrix;"+
+         "  void main(void) {"+
+         "      gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);"+
+         "      vTextureCoords = aVertexTextureCoords;"+
+         "  }";
 
       var fragmentShaderSource =
-         "  precision mediump float;"+
-         "  varying vec2 v_texcoord;"+
-
-         "  uniform sampler2D u_texture;"+
-         "  void main() {"+
-         "     gl_FragColor = texture2D(u_texture, v_texcoord);"+
-         "  }"
+         "  precision highp float;"+
+         "  uniform sampler2D uSampler;"+
+         "  varying vec2 vTextureCoords;"+
+         "  void main(void) {"+
+                "gl_FragColor = texture2D(uSampler, vTextureCoords);"+
+         "  }";
  
       var shaderProgram=this.initProgram(gl,fragmentShaderSource,vertexShaderSource);      
       gl.useProgram(shaderProgram);
  
-      // get pointers to the shader params
-
-
-      shaderProgram.shaderProjectionMatrixUniform = gl.getUniformLocation(shaderProgram, "projectionMatrix");      
-      shaderProgram.shaderModelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "modelViewMatrix");
+      //shader program
+      shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+      gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute); 
+      shaderProgram.vertexTextureAttribute = gl.getAttribLocation(shaderProgram, "aVertexTextureCoords");
+      gl.enableVertexAttribArray(shaderProgram.vertexTextureAttribute);
       
-      shaderProgram.shaderVertexPositionAttribute = gl.getAttribLocation(shaderProgram, "vertexPos");
-      gl.enableVertexAttribArray(shaderProgram.shaderVertexPositionAttribute);
+      //todo перекинул код с sampleUniform из загрузки текстуры, вообще не понятно почему в уроке его там разместили
+      shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
+      gl.uniform1i(shaderProgram.samplerUniform, 0);
+ 
 
-      //++++
-      var texcoordLoc = gl.getAttribLocation(shaderProgram, "a_texcoord");
-      gl.enableVertexAttribArray(texcoordLoc); 
-      gl.vertexAttribPointer(texcoordLoc, 2, gl.FLOAT, false, 0, 0);
-      
-      shaderProgram.texcoordsbuffer=texcoordLoc;
-      //+++++
+      shaderProgram.MVMatrix = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+      shaderProgram.ProjMatrix = gl.getUniformLocation(shaderProgram, "uPMatrix");
       
       return shaderProgram;         
    }
    
-   this.CreateColor=function(gl){           
-      var vertexShaderSource =
-         "    attribute vec3 vertexPos;\n" +
-         "    uniform mat4 modelViewMatrix;\n" +
-         "    uniform mat4 projectionMatrix;\n" +
-         "    void main(void) {\n" +
-         "        // Return the transformed and projected vertex value\n" +
-         "        gl_Position = projectionMatrix * modelViewMatrix * \n" +
-         "            vec4(vertexPos, 1.0);\n" +
-         "    }\n";
-
-       var fragmentShaderSource =
-           //"    attribute vec4 color;\n" +    
-           "    void main(void) {\n" +
-           "    // Return the pixel color: always output white\n" +
-           "    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n" +
-           "}\n";
-   
-      var shaderProgram=this.initProgram(gl,fragmentShaderSource,vertexShaderSource);
+   this.SetTextureProgram=function(gl,AOption){
+      var shaderProgram=this.programs["texture"]=this.programs["texture"]||this.CreateTextureProgram(gl);
+      gl.useProgram(shaderProgram);
       
-      // get pointers to the shader params  
-      shaderProgram.shaderVertexPositionAttribute = gl.getAttribLocation(shaderProgram, "vertexPos");
-      gl.enableVertexAttribArray(shaderProgram.shaderVertexPositionAttribute);   
-      shaderProgram.shaderProjectionMatrixUniform = gl.getUniformLocation(shaderProgram, "projectionMatrix");
-      shaderProgram.shaderModelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "modelViewMatrix");
-
+      gl.activeTexture(gl.TEXTURE0);//активная текстура
+      gl.bindTexture(gl.TEXTURE_2D, AOption["texture"]);
+      
       return shaderProgram;
    }
    
-   this.SetColor=function(gl,program,AOption){
+   //=========================================================================//
+   //=============================== Color program ===========================//
+   //=========================================================================//
+
+   this.CreateColorProgram=function(gl){           
+      var vertexShaderSource =  
+         "  attribute vec3 aVertexPosition;"+
+         "  uniform mat4 uMVMatrix;"+
+         "  uniform mat4 uPMatrix;"+
+         "  varying vec3 vVertexPos;"+ 
+         "  void main(void) {"+
+         "      gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);"+
+         "      vVertexPos=aVertexPosition;"+
+         "  }";
+
+      var fragmentShaderSource =
+         "  precision highp float;"+//?
+         "  uniform vec4 uColor;\n" +
+         "  uniform vec4 uBorderColor;\n" + 
+         "  uniform float uBorderSize;\n" + 
+         "  varying vec3 vVertexPos;"+ 
+         //"  const vec2 resolution=vec2(100,100);"+
+
+         "  void main(void) {"+
+         //"      vec2 position = ( gl_FragCoord.xy / resolution.xy );"+
+         "      vec4 texelColor = uColor; "+        
+         "      int count=0;"+
+         "      if(abs(vVertexPos.x)>0.5-uBorderSize) count++;"+
+         "      if(abs(vVertexPos.y)>0.5-uBorderSize) count++;"+
+         "      if(abs(vVertexPos.z)>0.5-uBorderSize) count++;"+
+         "      if(count>1) texelColor=uBorderColor;"+         
+         "      gl_FragColor = texelColor;"+      
+         "  }";
+ 
+      var shaderProgram=this.initProgram(gl,fragmentShaderSource,vertexShaderSource);      
+      gl.useProgram(shaderProgram);
+ 
+      //shader program
+      shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+      gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute); 
       
+      shaderProgram.color = gl.getUniformLocation(shaderProgram, "uColor");
+      shaderProgram.borderSize = gl.getUniformLocation(shaderProgram, "uBorderSize");
+      shaderProgram.borderColor = gl.getUniformLocation(shaderProgram, "uBorderColor");
+      
+      shaderProgram.MVMatrix = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+      shaderProgram.ProjMatrix = gl.getUniformLocation(shaderProgram, "uPMatrix");
+      return shaderProgram;
    }
+   
+   //Color
+   this.SetColorProgram=function(gl,AOptions){
+      var xOptions=AOptions||{};
+      var xColor=xOptions["color"]||[1.0,1.0,1.0,1.0];
+      var xBorderColor=xOptions["bordercolor"]||[0.0,0.0,0.0,1.0];
+      var xBorderSize=xOptions["bordersize"]||0.0;
+      
+      var shaderProgram=this.programs["color"]=this.programs["color"]||this.CreateColorProgram(gl);
+      gl.useProgram(shaderProgram);
+      gl.uniform4f(shaderProgram.color,xColor[0],xColor[1],xColor[2], xColor[3]||1);  
+      gl.uniform4f(shaderProgram.borderColor, xBorderColor[0], xBorderColor[1], xBorderColor[2],xBorderColor[3]||1 );
+      gl.uniform1f(shaderProgram.borderSize,xBorderSize);
+      return shaderProgram;
+   }
+   
    
    this.CreateMultiColor=function(gl){   
       //3d Shaders
@@ -139,9 +181,6 @@ function WebGlProgram(){
     }
 
    this.initProgram=function(gl,fragmentShaderSource,vertexShaderSource) {
-        // load and compile the fragment and vertex shader
-        //var fragmentShader = getShader(gl, "fragmentShader");
-        //var vertexShader = getShader(gl, "vertexShader");
         var fragmentShader = this.createShader(gl, fragmentShaderSource, "fragment");
         var vertexShader = this.createShader(gl, vertexShaderSource, "vertex");
 
@@ -150,24 +189,12 @@ function WebGlProgram(){
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
-
    
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
         
         return shaderProgram;
-   }
-   
-   this["multicolor"]={
-      "create":this.CreateMultiColor.bind(this)
-   }
-   this["color"]={
-      "create":this.CreateColor.bind(this)
-   }
-   
-   this["texture"]={
-      "create":this.CreateTexture.bind(this)
    }
 }
 var webglprogram=new WebGlProgram();

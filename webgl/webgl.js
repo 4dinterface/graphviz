@@ -2,11 +2,14 @@ function WebGl(){
    
    this.Init=function(canvas){
       var gl=this.initWebGL(canvas);
-      this.initViewport(gl,canvas);
-      gl["geometry"]={};
-      gl["programs"]={};
-      gl["currentprogram"];
-      gl["camera"]=new WebGLCamera();
+      this.Viewport(gl,0,0,canvas.width, canvas.height);
+      gl["currentprogram"]=null;
+      gl["camera"]=webglcamera.CreateOrbitCamera();
+      gl["camera"].projectionMatrix=this.initProjectionMatrix(canvas);
+      gl["commands"]=[];
+      gl["issafecommands"]=false;
+      
+      webglgeometry.Init(gl);
       return gl;
    }
    
@@ -29,13 +32,11 @@ function WebGl(){
          alert(msg);
          throw new Error(msg);
       }      
-      this.initViewport(gl,ACanvas);
-      //gl["projectionmatrix"]=webgl.initProjectionMatrix(ACanvas);
       return gl;
    }
    
-   this.initViewport=function(gl, canvas){
-      gl.viewport(0, 0, canvas.width, canvas.height);
+   this.Viewport=function(gl, x, y, width, height){
+      gl.viewport(x, y, width, height);
    }
    
    this.initProjectionMatrix=function(canvas){
@@ -44,15 +45,18 @@ function WebGl(){
       mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 1, 10000);
       return projectionMatrix;
    }
+   
+   this.PushCommands=function(AGL,ACmd,AOptions){
+      AGL["commands"].push({
+         command:ACmd,
+         options:AOptions
+      })
+   }
 
-   //================================== Program   ============================//   
-   this.SetProgram=function(gl,AName){
-      if(!gl["programs"][AName]){
-         gl["programs"][AName]=webglprogram[AName]["create"](gl);
-      }
-      
-      gl["currentprogram"]=gl["programs"][AName];
-      //console.log(gl["currentprogram"]);
+   //================================== Program   ============================//
+   this.SetProgram=function(gl,AName,AOptions){
+      var xFnName="Set"+AName[0].toUpperCase() + AName.substring(1,AName.length)+"Program";
+      gl["currentprogram"]=webglprogram[xFnName](gl,AOptions);
    };
    
    //======================= draw geometry ===================================//
@@ -77,85 +81,85 @@ function WebGl(){
   
       return xModelViewMatrix;
    }
-   
-   
-   this.DrawBox=function(gl,AOptions){
-      if(!gl["geometry"]["box"]){
-         gl["geometry"]["box"]=webglgeometry.InitBox(gl);
-      }
-      var xViewMatrix=this.CreateMatrix(AOptions);      
-      this.Draw(gl,gl["geometry"]["box"],gl["currentprogram"],xViewMatrix,AOptions);
+   //============================ draw =======================================//   
+   this.DrawText=function(AGL,AOptions){
+      //generate text texture
+      AGL["temptexttexture"]=webgltextures.CreateTextTexture(AGL,AOptions);
+ 
+      //set program and create geometry
+      var xCube=webglgeometry.ConfigPlane(AGL,AOptions);   
+      var xViewMatrix=this.CreateMatrix(AOptions); 
+
+      AOptions["width"]=AOptions["widthtexture"];
+      AOptions["height"]=AOptions["heighttexture"];
+      webgl.SetProgram(AGL,"texture",{"texture":AGL["temptexttexture"]});         
+      
+      //render program
+      this.Draw(AGL,xCube,AGL["currentprogram"],xViewMatrix,AOptions);
    }
    
-   this.DrawCube=function(gl,AOptions){
-      if(!gl["geometry"]["cube"]){
-         gl["geometry"]["cube"]=webglgeometry.InitCube(gl);
-      }
+   this.DrawLine=function(AGL,AOptions){
       
-      var xCube=webglgeometry.ConfigCube(gl,AOptions);
+      var  xLineGeometry=webglgeometry.ConfigLine(AGL,AOptions); 
+      var xViewMatrix=this.CreateMatrix({});      
+      
+      this.Draw(AGL,xLineGeometry,AGL["currentprogram"],xViewMatrix,AOptions);
+   }
+   
+   this.DrawPlane=function(AGL,AOptions){
+      
+      var xCube=webglgeometry.ConfigPlane(AGL,AOptions); 
+      var xViewMatrix=this.CreateMatrix(AOptions); 
+      this.Draw(AGL,xCube,AGL["currentprogram"],xViewMatrix,AOptions);
+   }
+   
+   this.DrawCube=function(AGL,AOptions){     
+      var xCube=webglgeometry.ConfigCube(AGL,AOptions);
       
       var xViewMatrix=this.CreateMatrix(AOptions); 
-      this.Draw(gl,xCube,gl["currentprogram"],xViewMatrix,AOptions);
+      this.Draw(AGL,xCube,AGL["currentprogram"],xViewMatrix,AOptions);
    }
    
-   this.DrawLine=function(gl,AOptions){
-      if(!gl["geometry"]["line"]){
-         gl["geometry"]["line"]=webglgeometry.InitLine(gl);
-      }   
-      var  xLineGeometry=webglgeometry.ConfigLine(gl,AOptions);
-      var xViewMatrix=this.CreateMatrix({});  
-      
-      this.Draw(gl,xLineGeometry,gl["currentprogram"],xViewMatrix,AOptions);
-   }
    
-   //============================ draw =======================================//   
-   this.Draw=function(gl, obj, shaderProgram, modelViewMatrix,options) {
-      var xOptions=options||{};
+   this.Draw=function(AGL, AGeometry, AShaderProgram, mvMatrix) {
+      this.PushCommands(AGL,"Draw",{
+         "geometry":AGeometry,
+         "mvmatrix":mvMatrix
+      });
       
-      var xCamera=gl["camera"].getModelViewMatrix();
-      var xProjectionMatrix=gl["camera"].getProjectionMatrix();         
-      var xWorldMatrix=mat4.create();
-      mat4.multiply(xWorldMatrix, xProjectionMatrix,xCamera);
+      //var xCamera=gl["camera"].getModelViewMatrix();
+      var xCamera=AGL["camera"].view();//<-пересчитывается на каждой фигуре, это не есть хорошо
+      //var xProjectionMatrix=gl["camera"].getProjectionMatrix(); 
+      var xProjectionMatrix=AGL["camera"].projectionMatrix;        
+      var pMatrix=mat4.create();
+      mat4.multiply(pMatrix, xProjectionMatrix,xCamera);
       
-      gl.enable(gl.DEPTH_TEST);
-      
-      gl.useProgram(shaderProgram);
+      //====================================================//
+      //gl.enable( gl.BLEND );
+      //gl.blendEquation( gl.FUNC_ADD );
+      //gl.blendFunc(gl.SRC_ALPHA, gl.SRC_ALPHA );
+      //====================================================//
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, obj["buffer"]);
-      //if("texcoordsbuffer" in obj ) gl.bindBuffer(gl.ARRAY_BUFFER, obj["texcoordsbuffer"]);
-      //if("indices" in obj) gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj["indices"]);
-        
-      // connect up the shader parameters: vertex position, color and projection/model matrices
-      // set up the buffers
-      gl.vertexAttribPointer(shaderProgram.shaderVertexPositionAttribute, obj.vertSize, gl.FLOAT, false, 0, 0);
-        
-      if(obj.colorBuffer){ gl.bindBuffer(gl.ARRAY_BUFFER, obj.colorBuffer) };
-      if(obj.colorSize && shaderProgram.shaderVertexColorAttribute){
-         gl.enableVertexAttribArray(shaderProgram.shaderVertexColorAttribute);
-         gl.vertexAttribPointer(shaderProgram.shaderVertexColorAttribute, obj.colorSize, gl.FLOAT, false, 0, 0)
-      };
-      
-      if(obj["texcoordsbuffer"] && shaderProgram.texcoordsbuffer){
-         gl.vertexAttribPointer(shaderProgram.texcoordsbuffer, 2, gl.FLOAT, false, 0, 0); 
-      };
-      
-      if(obj.indices){ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.indices)};
-
-      //console.log(projectionMatrix);
-      
-      gl.uniformMatrix4fv(shaderProgram.shaderProjectionMatrixUniform, false, xWorldMatrix);
-      gl.uniformMatrix4fv(shaderProgram.shaderModelViewMatrixUniform, false, modelViewMatrix);
-
-      // draw the object
-      switch(obj["method"]){
-         case "drawElements":    
-            gl.drawElements(options["primtype"]||obj.primtype, obj.nIndices, gl.UNSIGNED_SHORT, 0);
-         break;   
+     //vertexbuffer
+      AGL.bindBuffer(AGL.ARRAY_BUFFER, AGeometry["vertexbuffer"]);
+      AGL.vertexAttribPointer(AShaderProgram.vertexPositionAttribute, AGeometry["vertexbuffer"].itemSize, AGL.FLOAT, false, 0, 0);
+ 
+      //texturebuffer
+      if("vertexTextureAttribute" in AShaderProgram){
+         AGL.bindBuffer(AGL.ARRAY_BUFFER, AGeometry["texturecoordsbuffer"]);
+         AGL.vertexAttribPointer(AShaderProgram.vertexTextureAttribute, AGeometry["texturecoordsbuffer"].itemSize, AGL.FLOAT, false, 0, 0);
+      }      
          
-         case "drawArrays":       
-            gl.drawArrays(options["primtype"]||obj.primtype, 0, obj.nVerts);
-         break;
-      }
+      //apply uniforms
+      AGL.uniformMatrix4fv(AShaderProgram.ProjMatrix,false, pMatrix);
+      AGL.uniformMatrix4fv(AShaderProgram.MVMatrix, false, mvMatrix);  
+
+      AGL.enable(AGL.DEPTH_TEST);//тестирование глубины
+      if(AGeometry["method"]=="drawArrays"){
+         AGL.drawArrays(AGeometry["primtype"], 0, AGeometry["vertexbuffer"].numberOfVertex);
+      } else {
+         AGL.drawElements(AGL.TRIANGLES, AGeometry["indexbuffer"].numberOfItems, AGL.UNSIGNED_SHORT,0); 
+      }   
    }
    
    this.Clear=function(gl,AColor){
@@ -166,6 +170,7 @@ function WebGl(){
       
       gl.clearColor(xR, xG, xB, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT  | gl.DEPTH_BUFFER_BIT);
+      gl["commands"]=[];
    }
 
    //================================ camera =================================//
@@ -177,41 +182,58 @@ function WebGl(){
       xGL["camera"]=ACamera;
    }
    
-   //=============================== texture==================================//
-   this.CreateTextTexture=function(gl, str, width, height) {
-      // create an offscreen canvas with a 2D canvas context
+   //======================= texture framebuffer  ============================//  
+   this.InitTextureFramebuffer=function(gl,AOptions) {
+      var AOptions=AOptions||{};
+      var xWidth=AOptions["width"]||512;
+      var xHeight=AOptions["height"]||512;
       
-      var ctxForMakingTextures;
+      var rttFramebuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, rttFramebuffer);
+      rttFramebuffer.width = xWidth;
+      rttFramebuffer.height = xHeight;
+
+      var rttTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, rttTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+      //gl.generateMipmap(gl.TEXTURE_2D);
+
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, rttFramebuffer.width, rttFramebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+      var renderbuffer = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, rttFramebuffer.width, rttFramebuffer.height);
+
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rttTexture, 0);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        
+      return {
+         "framebuffer":rttFramebuffer,
+         "texture":rttTexture
+      }  
+   }
+   
+   this.BeginRenderToTexture=function(gl,ATextureFramebuffer){
+      var framebuffer=ATextureFramebuffer["framebuffer"];
       
-      if (!ctxForMakingTextures) {
-         ctxForMakingTextures = document.createElement("canvas").getContext("2d");
-      }
-      var ctx = ctxForMakingTextures;
-
-      // make it a desired size 
-      ctx.canvas.width = 128;
-      ctx.canvas.height = 64;
-
-      // fill it a certain color
-      ctx.fillStyle = "rgb(255,0,0)";  // red
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-      // draw some text into it.
-      ctx.fillStyle = "rgb(0,0,0)";  // yellow
-      ctx.font = "20px sans-serif";
-      ctx.fillText("Hello World", 5, 40);
-
-      // Now make a texture from it
-      var tex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ctx.canvas);
-
-      // generate mipmaps or set filtering 
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer); 
+      gl.viewport(0, 0, framebuffer.width, framebuffer.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   }
+   
+   this.EndRenderToTexture=function(gl,options){
+      gl.bindTexture(gl.TEXTURE_2D, options["texture"]);
       gl.generateMipmap(gl.TEXTURE_2D);
-
-      return tex;
-   };
-}  
-
+      
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return options["texture"];
+   }
+};
 
 var webgl=new WebGl();

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- this file is auto-generated from index.md. Do not edited directly -->
+<!--
+Copyright 2012, Gregg Tavares.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Gregg Tavares. nor the names of his
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=yes">
+<meta property="og:title" content="WebGL Fundamentals" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://webglfundamentals.org/webgl/lessons/resources/webglfundamentals.jpg" />
+<meta property="og:description" content="Articles that explain WebGL from the ground up. Learn the fundamentals and understand" />
+
+<title>WebGL Fundamentals</title>
+
+<link rel="alternate" type="application/atom+xml" title="WebGL Fundamentals" href="http://webglfundamentals.org/atom.xml" />
+
+<link rel="stylesheet" href="webgl/lessons/resources/base.css" type="text/css" />
+<link rel="stylesheet" href="webgl/lessons/resources/lesson.css" type="text/css" />
+<link rel="stylesheet" href="webgl/lessons/resources/index.css" type="text/css" />
+<script src="webgl/resources/jquery-1.7.1.min.js"></script>
+<script src="webgl/lessons/resources/prettify.js"></script>
+<script src="webgl/lessons/resources/lesson.js"></script>
+<script src="webgl/resources/webgl-utils.js"></script>
+<script src="webgl/resources/webgl-3d-math.js"></script>
+<script src="webgl/resources/primitives.js"></script>
+<script src="webgl/resources/same-code.js"></script>
+</head>
+<body>
+<div id="canvas">
+</div>
+<div id="contentwrap">
+  <div id="content">
+    <h1>WebGL Fundamentals <span class="rss"><a href="http://webglfundamentals.org/atom.xml">&nbsp;</a></span></h1>
+    <p>WebGL from the ground up. No magic.</p>
+<p>These are a set of articles that teach WebGL from basic principles.
+They are NOT old rehashed out of date OpenGL articles like many others on the net.
+They are entirely new, discarding the old out of date ideas and bringing you
+to a full understanding of what WebGL really is and how it really works.</p>
+<ul>
+  <li><a href="webgl/lessons/webgl-fundamentals.html">WebGL Fundamentals</a></li>
+  <li>Image Processing</li>
+  <ul>
+    <li><a href="webgl/lessons/webgl-image-processing.html">WebGL Image Processing</a></li>
+    <li><a href="webgl/lessons/webgl-image-processing-continued.html">WebGL Image Processing Continued</a></li>
+  </ul>
+  <li>2D translation, rotation, scale, matrix math</li>
+  <ul>
+    <li><a href="webgl/lessons/webgl-2d-translation.html">WebGL 2D Translation</a></li>
+    <li><a href="webgl/lessons/webgl-2d-rotation.html">WebGL 2D Rotation</a></li>
+    <li><a href="webgl/lessons/webgl-2d-scale.html">WebGL 2D Scale</a></li>
+    <li><a href="webgl/lessons/webgl-2d-matrices.html">WebGL 2D Matrices</a></li>
+  </ul>
+  <li>3D</li>
+  <ul>
+    <li><a href="webgl/lessons/webgl-3d-orthographic.html">WebGL - Orthographic 3D</a></li>
+    <li><a href="webgl/lessons/webgl-3d-perspective.html">WebGL 3D Perspective</a></li>
+    <li><a href="webgl/lessons/webgl-3d-camera.html">WebGL 3D - Cameras</a></li>
+  </ul>
+  <li>Misc</li>
+  <ul>
+    <li><a href="webgl/lessons/webgl-boilerplate.html">WebGL Boilerplate</a></li>
+    <li><a href="webgl/lessons/webgl-how-it-works.html">WebGL How It Works</a></li>
+    <li><a href="webgl/lessons/webgl-animation.html">WebGL - Animation</a></li>
+    <li><a href="webgl/lessons/webgl-3d-textures.html">WebGL 3D - Textures</a></li>
+    <li><a href="webgl/lessons/webgl-2-textures.html">WebGL Using 2 or More Textures</a></li>
+    <li><a href="webgl/lessons/webgl-and-alpha.html">WebGL and Alpha</a></li>
+    <li><a href="webgl/lessons/webgl-2d-vs-3d-library.html">WebGL - 2D vs 3D libraries</a></li>
+    <li><a href="webgl/lessons/webgl-less-code-more-fun.html">WebGL - Less Code, More Fun</a></li>
+    <li><a href="webgl/lessons/webgl-anti-patterns.html">WebGL - Anti-Patterns</a></li>
+  </ul>
+</ul>
+
+
+
+<!--
+
+<ul><li><a href="webgl/lessons/webgl-2-textures.html">WebGL Using 2 or More Textures</a></li>
+<li><a href="webgl/lessons/webgl-2d-matrices.html">WebGL 2D Matrices</a></li>
+<li><a href="webgl/lessons/webgl-2d-rotation.html">WebGL 2D Rotation</a></li>
+<li><a href="webgl/lessons/webgl-2d-scale.html">WebGL 2D Scale</a></li>
+<li><a href="webgl/lessons/webgl-2d-translation.html">WebGL 2D Translation</a></li>
+<li><a href="webgl/lessons/webgl-2d-vs-3d-library.html">WebGL - 2D vs 3D libraries</a></li>
+<li><a href="webgl/lessons/webgl-3d-camera.html">WebGL 3D - Cameras</a></li>
+<li><a href="webgl/lessons/webgl-3d-orthographic.html">WebGL - Orthographic 3D</a></li>
+<li><a href="webgl/lessons/webgl-3d-perspective.html">WebGL 3D Perspective</a></li>
+<li><a href="webgl/lessons/webgl-3d-textures.html">WebGL 3D - Textures</a></li>
+<li><a href="webgl/lessons/webgl-and-alpha.html">WebGL and Alpha</a></li>
+<li><a href="webgl/lessons/webgl-animation.html">WebGL - Animation</a></li>
+<li><a href="webgl/lessons/webgl-anti-patterns.html">WebGL Anti-Patterns</a></li>
+<li><a href="webgl/lessons/webgl-boilerplate.html">WebGL Boilerplate</a></li>
+<li><a href="webgl/lessons/webgl-fundamentals.html">WebGL Fundamentals</a></li>
+<li><a href="webgl/lessons/webgl-how-it-works.html">WebGL How It Works</a></li>
+<li><a href="webgl/lessons/webgl-image-processing-continued.html">WebGL Image Processing Continued</a></li>
+<li><a href="webgl/lessons/webgl-image-processing.html">WebGL Image Processing</a></li>
+<li><a href="webgl/lessons/webgl-less-code-more-fun.html">WebGL - Less Code, More Fun</a></li></ul>
+
+-->
+
+
+
+
+  </div>
+</div>
+<style>
+#forkongithub a {
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    font-family: arial,sans-serif;
+    text-align: center;
+    font-weight: bold;
+    padding: 5px 40px;
+    font-size: 1rem;
+    line-height: 2rem;
+    position: relative;
+    transition: 0.5s;
+    display: block;
+}
+#forkongithub a:hover {
+    background: #c11;
+    color: #fff;
+}
+#forkongithub a::before,#forkongithub a::after {
+    content: "";
+    width: 100%;
+    display: block;
+    position: absolute;
+    top: 1px;
+    left: 0;
+    height: 1px;
+    background: #fff;
+}
+#forkongithub a::after {
+    bottom: 1px;
+    top: auto;
+}
+
+@media screen and (min-width: 400px){
+    #forkongithub{
+        position: fixed;
+        display: block;
+        top: 0;
+        right: 0;
+        width: 200px;
+        overflow: hidden;
+        height: 200px;
+        z-index: 9999;
+    }
+    #forkongithub a{
+        width: 200px;
+        position: absolute;
+        top: 60px;
+        right: -60px;
+        transform: rotate(45deg);
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        -moz-transform: rotate(45deg);
+        -o-transform: rotate(45deg);
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.8);
+    }
+}
+
+</style>
+<div id="forkongithub"><a href="https://github.com/greggman/webgl-fundamentals">Fork me on GitHub</a></div>
+</body>
+
+
+

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!-- this file is auto-generated from webgl/lessons/webgl-2d-rotation.md. Do not edited directly -->
+<!--
+Copyright 2012, Gregg Tavares.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Gregg Tavares. nor the names of his
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=yes">
+<meta property="og:title" content="WebGL 2D Rotation" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://webglfundamentals.org/webgl/lessons/resources/webglfundamentals.jpg" />
+<meta property="og:description" content="Articles that explain WebGL from the ground up. Learn the fundamentals and understand" />
+<title>WebGL 2D Rotation</title>
+<link rel="stylesheet" href="resources/base.css" type="text/css" />
+<link rel="stylesheet" href="resources/lesson.css" type="text/css" />
+<script src="../resources/jquery-1.7.1.min.js"></script>
+<script src="resources/prettify.js"></script>
+<script src="resources/lesson.js"></script>
+</head>
+<body>
+<div id="contentwrap">
+  <div id="content">
+    <h1>WebGL 2D Rotation</h1>
+    <p>This post is a continuation of a series of posts about WebGL. The first <a href="webgl-fundamentals.html">started with fundamentals</a> and the previous was <a href="webgl-2d-translation.html">about translating geometry</a>.</p>
+<p>I&#39;m going to admit right up front I have no idea if how I explain this will make sense but what the heck, might as well try.
+<!--more-->
+First I want to introduce you to what&#39;s called a &quot;unit circle&quot;. If you remember your junior high school math (don&#39;t go to sleep on me!) a circle has a radius. The radius of a circle is the distance from the center of the circle to the edge. A unit circle is a circle with a radius of 1.0.</p>
+<p>Here&#39;s a unit circle.</p>
+<iframe class="webgl_example" width="300" height="300" src="../unit-circle.html"></iframe>
+
+<p>Notice as you drag the blue handle around the circle the X and Y positions change. Those represent the position of that point on the circle. At the top Y is 1 and X is 0. On the right X is 1 and Y is 0.</p>
+<p>If you remember from basic 3rd grade math if you multiply something by 1 it stays the same. So 123 * 1 = 123. Pretty basic right? Well, a unit circle, a circle with a radius of 1.0 is also a form of 1. It&#39;s a rotating 1.  So you can multiply something by this unit circle and in a way it&#39;s kind of like multiplying by 1 except magic happens and things rotate.</p>
+<p>We&#39;re going to take that X and Y value from any point on the unit circle and we&#39;ll multiply our geometry by them from <a href="webgl-2d-translation.html">our previous sample</a>.</p>
+<p>Here&#39;s are the updates to our shader.</p>
+<pre class="prettyprint showlinemods">
+&lt;script id="2d-vertex-shader" type="x-shader/x-vertex"&gt;
+attribute vec2 a_position;
+
+uniform vec2 u_resolution;
+uniform vec2 u_translation;
+uniform vec2 u_rotation;
+
+void main() {
+  // Rotate the position
+  vec2 rotatedPosition = vec2(
+     a_position.x * u_rotation.y + a_position.y * u_rotation.x,
+     a_position.y * u_rotation.y - a_position.x * u_rotation.x);
+
+  // Add in the translation.
+  vec2 position = rotatedPosition + u_translation;
+</pre>
+
+<p>And we update the JavaScript so that we can pass those 2 values in. </p>
+<pre class="prettyprint showlinemods">
+  ...
+  var rotationLocation = gl.getUniformLocation(program, "u_rotation");
+  ...
+  var rotation = [0, 1];
+  ..
+  // Draw the scene.
+  function drawScene() {
+    // Clear the canvas.
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Set the translation.
+    gl.uniform2fv(translationLocation, translation);
+
+    // Set the rotation.
+    gl.uniform2fv(rotationLocation, rotation);
+
+    // Draw the rectangle.
+    gl.drawArrays(gl.TRIANGLES, 0, 18);
+  }
+</pre>
+
+<p>And here&#39;s the result. Drag the handle on the circle to rotate or the sliders to translate.</p>
+<p><iframe class="webgl_example" src="../webgl-2d-geometry-rotation.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-geometry-rotation.html" target="_blank">click here to open in a separate window</a></p>
+<p>Why does it work? Well, look at the math. </p>
+<pre class="prettyprint showlinemods">
+rotatedX = a_position.x * u_rotation.y + a_position.y * u_rotation.x;
+rotatedY = a_position.y * u_rotation.y - a_position.x * u_rotation.x;
+</pre>
+
+<p>Let&#39;s stay you have a rectangle and you want to rotate it. Before you start rotating it the top right corner is at 3.0, 9.0. Let&#39;s pick a point on the unit circle 30 degrees clockwise from 12 o&#39;clock.</p>
+<p><img src="../resources/rotate-30.png" class="webgl_center" /></p>
+<p>The position on the circle there is 0.50 and 0.87</p>
+<pre class="webgl_center">
+   3.0 * 0.87 + 9.0 * 0.50 = 7.1
+   9.0 * 0.87 - 3.0 * 0.50 = 6.3
+</pre>
+
+<p>That&#39;s exactly where we need it to be</p>
+<p><img src="../resources/rotation-drawing.svg" width="500" class="webgl_center"/></p>
+<p>The same for 60 degrees clockwise</p>
+<p><img src="../resources/rotate-60.png" class="webgl_center" /></p>
+<p>The position on the circle there is 0.87 and 0.50</p>
+<pre class="webgl_center">
+   3.0 * 0.50 + 9.0 * 0.87 = 9.3
+   9.0 * 0.50 - 3.0 * 0.87 = 1.9
+</pre>
+
+<p>You can see that as we rotate that point clockwise to the right the X value gets bigger and the Y gets smaller. If kept going past 90 degrees X would start getting smaller again and Y would start getting bigger. That pattern gives us rotation.</p>
+<p>There&#39;s another name for the points on a unit circle. They&#39;re call the sine and cosine. So for any given angle we can just look up the sine and cosine like this.</p>
+<pre class="prettyprint showlinemods">
+function printSineAndCosineForAnAngle(angleInDegrees) {
+  var angleInRadians = angleInDegrees * Math.PI / 180;
+  var s = Math.sin(angleInRadians);
+  var c = Math.cos(angleInRadians);
+  console.log("s = " + s + " c = " + c);
+}
+</pre>
+
+<p>If you copy and paste the code into your JavaScript console and type <code>printSineAndCosignForAngle(30)</code> you see it prints <code>s = 0.49 c= 0.87</code> (note: I rounded off the numbers.)</p>
+<p>If you put it all together you can rotate your geometry to any angle you desire. Just set the rotation to the sine and cosine of the angle you want to rotate to.</p>
+<pre class="prettyprint showlinemods">
+  ...
+  var angleInRadians = angleInDegrees * Math.PI / 180;
+  rotation[0] = Math.sin(angleInRadians);
+  rotation[1] = Math.cos(angleInRadians);
+</pre>
+
+<p>Here&#39;s a version that just has an angle setting. Drag the sliders to translate or rotate.</p>
+<p><iframe class="webgl_example" src="../webgl-2d-geometry-rotation-angle.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-geometry-rotation-angle.html" target="_blank">click here to open in a separate window</a></p>
+<p>I hope that made some sense. <a href="webgl-2d-scale.html">Next up a simpler one. Scale</a>.</p>
+<div class="webgl_bottombar"><h3>What are radians?</h3>
+<p>
+Radians are a unit of measurement used with circles, rotation and angles. Just like we can measure distance in inches, yards, meters, etc we can measure angles in degrees or radians. 
+</p>
+<p>
+You&#39;re probably aware that math with metric measurements is easier than math with imperial measurements. To go from inches to feet we divide by 12. To go from inches to yards we divide by 36. I don&#39;t know about you but I can&#39;t divide by 36 in my head. With metric it&#39;s much easier. To go from millimeters to centimeters we divide by 10. To from millimeters to meters we divide by 1000. I <strong>can</strong> divide by 1000 in my head.
+</p>
+<p>
+Radians vs degrees are similar. Degrees make the math hard. Radians make the math easy. There are 360 degrees in a circle but there are only 2π radians. So a full turn is 2π radians. A half turn is 1π radian. A 1/4 turn, ie 90 degress is 1/2π radians. So if you want to rotate something 90 degrees just use <code>Math.PI <em> 0.5</code>. If you want to rotate it 45 degrees use <code>Math.PI </em> 0.25</code> etc.
+</p>
+<p>
+Nearly all math involving angles, circles or rotation works very simply if you start thinking in radians. So give it try. Use radians, not degrees except in UI displays.
+</p>
+</div>
+
+
+
+    <hr/>
+    <div>Questions? <a href="http://stackoverflow.com/questions/tagged/webgl">Ask on stackoverflow</a>.
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'webglfundamentals'; // required: replace example with your forum shortname
+        var disqus_identifier = 'WebGL 2D Rotation';
+        var disqus_title = 'WebGL 2D Rotation';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+  </div>
+</div>
+</body>
+
+
+

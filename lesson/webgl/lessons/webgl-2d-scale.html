@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!-- this file is auto-generated from webgl/lessons/webgl-2d-scale.md. Do not edited directly -->
+<!--
+Copyright 2012, Gregg Tavares.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Gregg Tavares. nor the names of his
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=yes">
+<meta property="og:title" content="WebGL 2D Scale" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://webglfundamentals.org/webgl/lessons/resources/webglfundamentals.jpg" />
+<meta property="og:description" content="Articles that explain WebGL from the ground up. Learn the fundamentals and understand" />
+<title>WebGL 2D Scale</title>
+<link rel="stylesheet" href="resources/base.css" type="text/css" />
+<link rel="stylesheet" href="resources/lesson.css" type="text/css" />
+<script src="../resources/jquery-1.7.1.min.js"></script>
+<script src="resources/prettify.js"></script>
+<script src="resources/lesson.js"></script>
+</head>
+<body>
+<div id="contentwrap">
+  <div id="content">
+    <h1>WebGL 2D Scale</h1>
+    <p>This post is a continuation of a series of posts about WebGL. The first <a href="webgl-fundamentals.html">started with fundamentals</a> and the previous was <a href="webgl-2d-rotation.html">about rotating geometry</a>.</p>
+<p>Scaling is just as <a href="webgl-2d-translation.html">easy as translation</a>.
+<!--more-->
+We multiply the position by our desired scale. Here&#39;s are the changes from our <a href="webgl-2d-rotation.html">previous sample</a>.</p>
+<pre class="prettyprint showlinemods">
+&lt;script id="2d-vertex-shader" type="x-shader/x-vertex"&gt;
+attribute vec2 a_position;
+
+uniform vec2 u_resolution;
+uniform vec2 u_translation;
+uniform vec2 u_rotation;
+uniform vec2 u_scale;
+
+void main() {
+  // Scale the positon
+  vec2 scaledPosition = a_position * u_scale;
+
+  // Rotate the position
+  vec2 rotatedPosition = vec2(
+     scaledPosition.x * u_rotation.y + scaledPosition.y * u_rotation.x,
+     scaledPosition.y * u_rotation.y - scaledPosition.x * u_rotation.x);
+
+  // Add in the translation.
+  vec2 position = rotatedPosition + u_translation;
+</pre>
+
+<p>and we add the JavaScript needed to set the scale when we draw.</p>
+<pre class="prettyprint showlinemods">
+  ...
+  var scaleLocation = gl.getUniformLocation(program, "u_scale");
+  ...
+  var scale = [1, 1];
+  ...
+  // Draw the scene.
+  function drawScene() {
+    // Clear the canvas.
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Set the translation.
+    gl.uniform2fv(translationLocation, translation);
+
+    // Set the rotation.
+    gl.uniform2fv(rotationLocation, rotation);
+
+    // Set the scale.
+    gl.uniform2fv(scaleLocation, scale);
+
+    // Draw the rectangle.
+    gl.drawArrays(gl.TRIANGLES, 0, 18);
+  }
+</pre>
+
+<p>And now we have scale. Drag the sliders.</p>
+<p><iframe class="webgl_example" src="../webgl-2d-geometry-scale.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-geometry-scale.html" target="_blank">click here to open in a separate window</a></p>
+<p>One thing to notice is that scaling by a negative value flips our geometry.</p>
+<p>I hope these last 3 posts were helpful in understanding <a href="webgl-2d-translation.html">translation</a>, <a href="webgl-2d-rotation.html">rotation</a> and scale. Next we&#39;ll go over <a href="webgl-2d-matrices.html">the magic that is matrices</a> that combine all 3 of these into a much simpler and often more useful form.</p>
+<div class="webgl_bottombar">
+<h3>Why an &#39;F&#39;?</h3>
+<p>
+The first time I saw someone use a &#39;F&#39; was on a texture. The &#39;F&#39; itself is not important. What is important is that you can tell its orientation from any direction. If we used a heart ? or a triangle △ for example we couldn&#39;t tell if it was flipped horizontally. A circle ○ would be even worse. A colored rectangle would arguably work with different colors on each corner but then you&#39;d have to remember which corner was which. An F&#39;s orientation is instantly recognizable. 
+</p>
+<img src="../resources/f-orientation.svg" class="webgl_center"/>
+<p>
+Any shape that you can tell the orientation of would work, I&#39;ve just used &#39;F&#39; ever since I was &#39;F&#39;irst introduced to the idea.
+</p>
+</div>
+
+
+
+
+
+    <hr/>
+    <div>Questions? <a href="http://stackoverflow.com/questions/tagged/webgl">Ask on stackoverflow</a>.
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'webglfundamentals'; // required: replace example with your forum shortname
+        var disqus_identifier = 'WebGL 2D Scale';
+        var disqus_title = 'WebGL 2D Scale';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+  </div>
+</div>
+</body>
+
+
+

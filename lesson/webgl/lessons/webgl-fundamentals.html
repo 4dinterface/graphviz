@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<!-- this file is auto-generated from webgl/lessons/webgl-fundamentals.md. Do not edited directly -->
+<!--
+Copyright 2012, Gregg Tavares.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Gregg Tavares. nor the names of his
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=yes">
+<meta property="og:title" content="WebGL Fundamentals" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://webglfundamentals.org/webgl/lessons/resources/webglfundamentals.jpg" />
+<meta property="og:description" content="Articles that explain WebGL from the ground up. Learn the fundamentals and understand" />
+<title>WebGL Fundamentals</title>
+<link rel="stylesheet" href="resources/base.css" type="text/css" />
+<link rel="stylesheet" href="resources/lesson.css" type="text/css" />
+<script src="../resources/jquery-1.7.1.min.js"></script>
+<script src="resources/prettify.js"></script>
+<script src="resources/lesson.js"></script>
+</head>
+<body>
+<div id="contentwrap">
+  <div id="content">
+    <h1>WebGL Fundamentals</h1>
+    <p>WebGL makes it possible to display amazing realtime 3D graphics in your browser but what many people don&#39;t know is that WebGL is actually a 2D API, not a 3D API. Let me explain.
+<!--more-->
+WebGL only cares about 2 things. Clipspace coordinates in 2D and colors. Your job as a programmer using WebGL is to provide WebGL with those 2 things. You provide 2 &quot;shaders&quot; to do this. A Vertex shader which provides the clipspace coordinates and a fragment shader that provides the color.</p>
+<p>Clipspace coordinates always go from -1 to +1 no matter what size your canvas is. Here is a simple WebGL example that shows WebGL in its simplest form.</p>
+<pre class="prettyprint showlinemods">
+// Get A WebGL context
+var canvas = document.getElementById("canvas");
+var gl = canvas.getContext("experimental-webgl");
+
+// setup a GLSL program
+var vertexShader = createShaderFromScriptElement(gl, "2d-vertex-shader");
+var fragmentShader = createShaderFromScriptElement(gl, "2d-fragment-shader");
+var program = createProgram(gl, [vertexShader, fragmentShader]);
+gl.useProgram(program);
+
+// look up where the vertex data needs to go.
+var positionLocation = gl.getAttribLocation(program, "a_position");
+
+// Create a buffer and put a single clipspace rectangle in
+// it (2 triangles)
+var buffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bufferData(
+    gl.ARRAY_BUFFER, 
+    new Float32Array([
+        -1.0, -1.0, 
+         1.0, -1.0, 
+        -1.0,  1.0, 
+        -1.0,  1.0, 
+         1.0, -1.0, 
+         1.0,  1.0]), 
+    gl.STATIC_DRAW);
+gl.enableVertexAttribArray(positionLocation);
+gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+// draw
+gl.drawArrays(gl.TRIANGLES, 0, 6);
+</pre>
+
+<p>Here&#39;s the 2 shaders</p>
+<pre class="prettyprint showlinemods">
+&lt;script id="2d-vertex-shader" type="x-shader/x-vertex"&gt;
+attribute vec2 a_position;
+
+void main() {
+  gl_Position = vec4(a_position, 0, 1);
+}
+&lt;/script&gt;
+
+&lt;script id="2d-fragment-shader" type="x-shader/x-fragment"&gt;
+void main() {
+  gl_FragColor = vec4(0,1,0,1);  // green
+}
+&lt;/script&gt;
+</pre>
+
+<p>This will draw a green rectangle the entire size of the canvas. Here it is</p>
+<p><iframe class="webgl_example" src="../webgl-fundamentals.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-fundamentals.html" target="_blank">click here to open in a separate window</a></p>
+<p>Not very exciting :-p</p>
+<p>Again, clipspace coordinates always go from -1 to +1 regardless of the size of the canvas. In the case above you can see we are doing nothing but passing on our position data directly. Since the position data is already in clipspace there is no work to do. <strong>If you want 3D it&#39;s up to you to supply shaders that convert from 3D to 2D because WebGL IS A 2D API!!!</strong></p>
+<p>For 2D stuff you would probably rather work in pixels than clipspace so let&#39;s change the shader so we can supply rectangles in pixels and have it convert to clipspace for us. Here&#39;s the new vertex shader</p>
+<pre class="prettyprint showlinemods">
+&lt;script id="2d-vertex-shader" type="x-shader/x-vertex"&gt;
+attribute vec2 a_position;
+
+uniform vec2 u_resolution;
+
+void main() {
+   // convert the rectangle from pixels to 0.0 to 1.0
+   vec2 zeroToOne = a_position / u_resolution;
+
+   // convert from 0->1 to 0->2
+   vec2 zeroToTwo = zeroToOne * 2.0;
+
+   // convert from 0->2 to -1->+1 (clipspace)
+   vec2 clipSpace = zeroToTwo - 1.0;
+
+   gl_Position = vec4(clipSpace, 0, 1);
+}
+&lt;/script&gt;
+</pre>
+
+<p>Now we can change our data from clipspace to pixels</p>
+<pre class="prettyprint showlinemods">
+// set the resolution
+var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+// setup a rectangle from 10,20 to 80,30 in pixels
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    10, 20,
+    80, 20,
+    10, 30,
+    10, 30,
+    80, 20,
+    80, 30]), gl.STATIC_DRAW);
+</pre>
+
+<p>And here it is</p>
+<p><iframe class="webgl_example" src="../webgl-2d-rectangle.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-rectangle.html" target="_blank">click here to open in a separate window</a></p>
+<p>You might notice the rectangle is near the bottom of that area. WebGL considers the bottom left corner to be 0,0. To get it to be the more traditional top left corner used for 2d graphics APIs we just flip the y coordinate.</p>
+<pre class="prettyprint showlinemods">
+   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+</pre>
+
+<p>And now our rectangle is where we expect it.</p>
+<p><iframe class="webgl_example" src="../webgl-2d-rectangle-top-left.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-rectangle-top-left.html" target="_blank">click here to open in a separate window</a></p>
+<p>Let&#39;s make the code that defines a rectangle into a function so we can call it for different sized rectangles. While we&#39;re at it we&#39;ll make the color settable.</p>
+<p>First we make the fragment shader take a color uniform input.</p>
+<pre class="prettyprint showlinemods">
+&lt;script id="2d-fragment-shader" type="x-shader/x-fragment"&gt;
+precision mediump float;
+
+uniform vec4 u_color;
+
+void main() {
+   gl_FragColor = u_color;
+}
+&lt;/script&gt;
+</pre>
+
+<p>And here&#39;s the new code that draws 50 rectangles in random places and random colors.</p>
+<pre class="prettyprint showlinemods">
+  var colorLocation = gl.getUniformLocation(program, "u_color");
+  ...
+  // Create a buffer
+  var buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.enableVertexAttribArray(positionLocation);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  // draw 50 random rectangles in random colors
+  for (var ii = 0; ii < 50; ++ii) {
+    // Setup a random rectangle
+    setRectangle(
+        gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300));
+
+    // Set a random color.
+    gl.uniform4f(colorLocation, Math.random(), Math.random(), Math.random(), 1);
+
+    // Draw the rectangle.
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+}
+
+// Returns a random integer from 0 to range - 1.
+function randomInt(range) {
+  return Math.floor(Math.random() * range);
+}
+
+// Fills the buffer with the values that define a rectangle.
+function setRectangle(gl, x, y, width, height) {
+  var x1 = x;
+  var x2 = x + width;
+  var y1 = y;
+  var y2 = y + height;
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+     x1, y1,
+     x2, y1,
+     x1, y2,
+     x1, y2,
+     x2, y1,
+     x2, y2]), gl.STATIC_DRAW);
+}
+</pre>
+
+<p>And here&#39;s the rectangles.</p>
+<p><iframe class="webgl_example" src="../webgl-2d-rectangles.html" width="400" height="300"></iframe>
+<a class="webgl_center" href="../webgl-2d-rectangles.html" target="_blank">click here to open in a separate window</a></p>
+<p>I hope you can see that WebGL is actually a pretty simple API. While it can get more complicated to do 3D that complication is added by you, the programmer, in the form of more complex shaders. The WebGL API itself is 2D and fairly simple.</p>
+<p>From here you can go in 2 direction. If you are interested in image procesing I&#39;ll show you <a href="webgl-image-processing.html">how to do some 2D image processing</a>. If you are interesting in learning about translation, rotation and scale then <a href="webgl-2d-translation.html">start here</a>.</p>
+<div class="webgl_bottombar">
+<h3>What do type=&quot;x-shader/x-vertex&quot; and type=&quot;x-shader/x-fragment&quot; mean?</h3>
+<p>
+<code>&lt;script&gt;</code> tags default to having JavaScript in them. You can put no type or you can put <code>type=&quot;javascript&quot;</code> or <code>type=&quot;text/javascript&quot;</code> and the browser will interpret the contents as JavaScript. If you put anything else the browser ignores the contents of the script tag.
+</p>
+<p>
+We can use this feature to store shaders in script tags. Even better, we can make up our own type and in our javascript look for that to decide whether to compile the shader as a vertex shader or a fragment shader.
+</p>
+<p>
+In this case the function <code>createShaderFromScriptElement</code> looks for a script with specified <code>id</code> and then looks at the <code>type</code> to decide what type of shader to create.
+</p>
+</div>
+
+    <hr/>
+    <div>Questions? <a href="http://stackoverflow.com/questions/tagged/webgl">Ask on stackoverflow</a>.
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'webglfundamentals'; // required: replace example with your forum shortname
+        var disqus_identifier = 'WebGL Fundamentals';
+        var disqus_title = 'WebGL Fundamentals';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+  </div>
+</div>
+</body>
+
+
+

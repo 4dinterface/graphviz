@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!-- this file is auto-generated from webgl/lessons/webgl-boilerplate.md. Do not edited directly -->
+<!--
+Copyright 2012, Gregg Tavares.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Gregg Tavares. nor the names of his
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=yes">
+<meta property="og:title" content="WebGL Boilerplate" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="http://webglfundamentals.org/webgl/lessons/resources/webglfundamentals.jpg" />
+<meta property="og:description" content="Articles that explain WebGL from the ground up. Learn the fundamentals and understand" />
+<title>WebGL Boilerplate</title>
+<link rel="stylesheet" href="resources/base.css" type="text/css" />
+<link rel="stylesheet" href="resources/lesson.css" type="text/css" />
+<script src="../resources/jquery-1.7.1.min.js"></script>
+<script src="resources/prettify.js"></script>
+<script src="resources/lesson.js"></script>
+</head>
+<body>
+<div id="contentwrap">
+  <div id="content">
+    <h1>WebGL Boilerplate</h1>
+    <p>This is a continuation from <a href="webgl-fundamentals.html">WebGL Fundamentals</a>.
+WebGL sometimes appears complicated to learn because most lessons
+go over everything all at once. I&#39;ll try to avoid that where possible
+and break it down into smaller pieces.</p>
+<p>One of things that makes WebGL seem complicated is that you have these 2
+tiny functions, a vertex shader and a fragment shader.  Those two
+functions usually run on your GPU which is where all the speed comes from.
+That&#39;s also why they are written in a custom language, a language that
+matches what a GPU can do.  Those 2 functions need to be compiled and
+linked.  That process is, 99% of the time, the same in every WebGL
+program.</p>
+<p>Here&#39;s the boilerplate code for compiling a shader.</p>
+<pre class="prettyprint showlinemods">
+/**
+ * Creates and compiles a shader.
+ *
+ * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {string} shaderSource The GLSL source code for the shader.
+ * @param {number} shaderType The type of shader, VERTEX_SHADER or
+ *     FRAGMENT_SHADER.
+ * @return {!WebGLShader} The shader.
+ */
+function compileShader(gl, shaderSource, shaderType) {
+  // Create the shader object
+  var shader = gl.createShader(shaderType);
+
+  // Set the shader source code.
+  gl.shaderSource(shader, shaderSource);
+
+  // Compile the shader
+  gl.compileShader(shader);
+
+  // Check if it compiled
+  var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  if (!success) {
+    // Something went wrong during compilation; get the error
+    throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+  }
+
+  return shader;
+}
+</pre>
+
+<p>And the boilerplate code for linking 2 shaders into a program</p>
+<pre class="prettyprint showlinemods">
+/**
+ * Creates a program from 2 shaders.
+ *
+ * @param {!WebGLRenderingContext) gl The WebGL context.
+ * @param {!WebGLShader} vertexShader A vertex shader.
+ * @param {!WebGLShader} fragmentShader A fragment shader.
+ * @return {!WebGLProgram} A program.
+ */
+function createProgram(gl, vertexShader, fragmentShader) {
+  // create a program.
+  var program = gl.createProgram();
+
+  // attach the shaders.
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+
+  // link the program.
+  gl.linkProgram(program);
+
+  // Check if it linked.
+  var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+  if (!success) {
+      // something went wrong with the link
+      throw ("program filed to link:" + gl.getProgramInfoLog (program));
+  }
+
+  return program;
+};
+</pre>
+
+<p>Of course how you decide to handle errors might be different.  Throwing
+exceptions might not be the best way to handle things.  Still, those few
+lines of code are the pretty much the same in nearly every WebGL program.</p>
+<p>I like store my shaders in non javascript &lt;script&gt; tags.  It makes
+them easy to edit so I use code like this.</p>
+<pre class="prettyprint showlinemods">
+/**
+ * Creates a shader from the content of a script tag.
+ *
+ * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {string} scriptId The id of the script tag.
+ * @param {string} opt_shaderType. The type of shader to create.
+ *     If not passed in will use the type attribute from the
+ *     script tag.
+ * @return {!WebGLShader} A shader.
+ */
+function createShaderFromScript(gl, scriptId, opt_shaderType) {
+  // look up the script tag by id.
+  var shaderScript = document.getElementById(scriptId);
+  if (!shaderScript) {
+    throw("*** Error: unknown script element" + scriptId);
+  }
+
+  // extract the contents of the script tag.
+  var shaderSource = shaderScript.text;
+
+  // If we didn't pass in a type, use the 'type' from
+  // the script tag.
+  if (!opt_shaderType) {
+    if (shaderScript.type == "x-shader/x-vertex") {
+      opt_shaderType = gl.VERTEX_SHADER;
+    } else if (shaderScript.type == "x-shader/x-fragment") {
+      opt_shaderType = gl.FRAGMENT_SHADER;
+    } else if (!opt_shaderType) {
+      throw("*** Error: shader type not set");
+    }
+  }
+
+  return compileShader(gl, shaderSource, opt_shaderType);
+};
+</pre>
+
+<p>Now to compile a shader I can just do</p>
+<pre class="prettyprint showlinemods">
+var shader = compileShaderFromScriptTag(gl, "someScriptTagId");
+</pre>
+
+<p>I&#39;ll usually go one step further and make a function to compile to shaders
+from script tags, attach them to a program and link them.</p>
+<pre class="prettyprint showlinemods">
+/**
+ * Creates a program from 2 script tags.
+ *
+ * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {string} vertexShaderId The id of the vertex shader script tag.
+ * @param {string} fragmentShaderId The id of the fragment shader script tag.
+ * @return {!WebGLProgram} A program
+ */
+function createProgramFromScriptTags(
+    gl, vertexShaderId, fragmentShaderId) {
+  var vertexShader = createShaderFromScriptTag(gl, vertexShaderId);
+  var fragmentShader = createShaderFromScriptTag(gl, fragmentShaderId);
+  return createProgram(gl, vertexShader, fragmentShader);
+}
+</pre>
+
+<p>There&#39;s a couple of other pieces I&#39;ve needed in most WebGL samples.</p>
+<p>One is <a href="http://paulirish.com/2011/requestanimationframe-for-smart-animating/">Paul
+Irish&#39;s requestAnimationFrame polyfill</a>.  The other is some code to
+initialize WebGL.  At the time of this writing WebGL requires the asking
+for an &quot;experimental-webgl&quot; context where as in the near future you can
+just ask for &quot;webgl&quot;.  I could write this in every WebGL program</p>
+<pre class="prettyprint showlinemods">
+   ...
+   var gl = canvas.getContext("experimental-webgl");
+   if (!gl) {
+     gl = canvas.getContext("webgl");
+   }
+   ...
+</pre>
+
+<p>But I prefer to use some function I&#39;ve written before.</p>
+<p>That&#39;s most of my minmum set of WebGL boilerplate code.  <a href="a
+href=&quot;http://github.com/greggman/webgl-fundamentals/&quot;">a
+href=&quot;http://github.com/greggman/webgl-fundamentals/&quot;</a>You can find that
+code here</a>.</p>
+<p>The rest of what makes WebGL look complicated is setting up all the inputs
+to your shaders.  See <a href="webgl-how-it-works.html">how it works&lt;/&gt;.</p>
+
+    <hr/>
+    <div>Questions? <a href="http://stackoverflow.com/questions/tagged/webgl">Ask on stackoverflow</a>.
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'webglfundamentals'; // required: replace example with your forum shortname
+        var disqus_identifier = 'WebGL Boilerplate';
+        var disqus_title = 'WebGL Boilerplate';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+  </div>
+</div>
+</body>
+
+
+

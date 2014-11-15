@@ -1,0 +1,37 @@
+{
+  "name": "webgl-fundamentals",
+  "version": "0.0.0",
+  "description": "Some WebGL Tutorials designed for real WebGL and not 20yr old OpenGL",
+  "main": "index.js",
+  "dependencies": {
+    "feed": "^0.2.6",
+    "glob": "^4.0.2",
+    "htmlparser2": "^3.7.2",
+    "inmemfilecache": "0.0.1",
+    "marked": "~0.3.2",
+    "minimist": "^0.1.0",
+    "mout": "^0.9.1",
+    "promise": "^5.0.0",
+    "sitemap": "^0.7.4"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.0",
+    "gulp-jsdoc": "^0.1.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/greggman/webgl-fundamentals.git"
+  },
+  "keywords": [
+    "WebGL"
+  ],
+  "author": "Gregg Tavares",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/greggman/webgl-fundamentals/issues"
+  },
+  "homepage": "https://github.com/greggman/webgl-fundamentals"
+}

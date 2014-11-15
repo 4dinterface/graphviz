@@ -1,218 +1,102 @@
-function WebGLCamera(){
-    this.mvMatrix    = mat4.create();
-    this.orbitMatrix = mat4.create();
-    this.eyeMatrix   = mat4.create();
-    this.pMatrix     = mat4.create();
-    this.nMatrix     = mat4.create();
-    this.cMatrix     = mat4.create();
-    
-    this.aspectRatio = 1.6;
-    this.fov         = 1.0;
+"use strict"
 
-    this.orbit = [0, 0, 0]; // where we are orbiting
-    this.eye   = [0, 0, 0]; // where eye/camera is   
+//Scratch variables
+var scratch0 = new Float32Array(16)
+var scratch1 = new Float32Array(16)
 
-    this.orbitRotation = quat.create();
-    this.eyeRotation   = quat.create();
-    
-    this.rotYaw     = 0;
-    this.orbitYaw   = 0;
-    this.orbitPitch = 0;
-
-    this.far  = 2000;
-    this.near = 0.1;
-    this.up   = [0, 1, 0];
-    //this.update();
+function OrbitCamera(rotation, center, distance) {
+  this.rotation = rotation
+  this.center   = center
+  this.distance = distance
+  
 }
 
-WebGLCamera.prototype.setAspectRatio = function(aspect){
-    this.aspectRatio = aspect;
-};
+var proto = OrbitCamera.prototype
 
-WebGLCamera.prototype.update = function(isOrbit){    
-    if(isOrbit) {
-        var eye = vec3.create();
-                
-        vec3.sub(eye, this.eye, this.orbit);
-        
-        mat4.fromRotationTranslation(this.orbitMatrix, this.orbitRotation, this.orbit);
-        mat4.fromRotationTranslation(this.eyeMatrix,   this.eyeRotation,   eye);        
-        mat4.multiply(this.mvMatrix, this.orbitMatrix, this.eyeMatrix);
-    }
-    else {
-        mat4.fromRotationTranslation(this.mvMatrix, this.eyeRotation, this.eye);    
-    }
-};
-
-WebGLCamera.prototype.getModelViewMatrix = function () {
-    mat4.invert(this.cMatrix, this.mvMatrix);
-    return this.cMatrix;
-};
-
-WebGLCamera.prototype.getProjectionMatrix = function () {
-    mat4.perspective(this.pMatrix, this.fov, this.aspectRatio, this.near, this.far);
-    return this.pMatrix;
-};
-
-WebGLCamera.prototype.getNormalMatrix = function () {    
-    var mvMatrix = this.getModelViewMatrix();
-    var nMatrix  = this.nMatrix;
-
-    mat4.copy(nMatrix, mvMatrix);
-    mat4.invert(nMatrix, nMatrix);
-    mat4.transpose(nMatrix, nMatrix);
-
-    return nMatrix;
-};
-
-WebGLCamera.prototype.setOrbit = function (newOrbit) {        
-    vec3.copy(this.orbit, newOrbit);
-    this.update();
-};
-
-WebGLCamera.prototype.setEye = function (eye) {
-    vec3.copy(this.eye, eye);
-    this.update();
-};
-
-WebGLCamera.prototype.changeOrbitYaw = function(amount){
-    var rotYaw = quat.create();
-    
-    quat.setAxisAngle(rotYaw, this.up, amount);
-    quat.multiply(this.orbitRotation, rotYaw, this.orbitRotation);
-    quat.normalize(this.orbitRotation, this.orbitRotation);
-    
-    this.orbitYaw += amount;
-    
-    this.update(true);
-};
-
-
-WebGLCamera.prototype.changeOrbitPitch = function(amount){
-    quat.rotateX(this.orbitRotation, this.orbitRotation, amount);
-    quat.normalize(this.orbitRotation, this.orbitRotation);
-    
-    this.update(true);
-};
-
-WebGLCamera.prototype.changeEyeYaw = function (amount) {    
-    var rotYaw = quat.create();    
-    quat.setAxisAngle(rotYaw, this.up, amount);
-    quat.multiply(this.eyeRotation, rotYaw, this.eyeRotation);
-    
-    this.rotYaw += amount;
-    
-    this.update();
-};
-
-WebGLCamera.prototype.changeEyePitch = function (amount) {
-    quat.rotateX(this.eyeRotation, this.eyeRotation, amount);
-    quat.normalize(this.eyeRotation, this.eyeRotation);
-    this.update();
-};
-
-WebGLCamera.prototype.MoveEye = function(x,y){
-   
+proto.view = function(out) {
+  if(!out) {
+    out = mat4.create()
+  }
+  scratch1[0] = scratch1[1] = 0.0
+  scratch1[2] = -this.distance
+  mat4.fromRotationTranslation(out,
+    quat.conjugate(scratch0, this.rotation),
+    scratch1)
+  mat4.translate(out, out, vec3.negate(scratch0, this.center))
+  return out
 }
 
-WebGLCamera.prototype._MoveEye = function (direction, velocity) {
-        vec3.scale(direction, direction, velocity);
-        vec3.sub(this.eye, this.eye, direction);
-        this.update();
-    };
+proto.setEye=function(arr){
+   this.Zoom(arr[2]);
+};
 
-//============================ Forward / Backward ============================//
-WebGLCamera.prototype.MoveEyeForward = function (velocity) {
-        var dir   = vec3.fromValues(0, 0, 0);
-        var right = this.getEyeRightVector();
-        
-        vec3.cross(dir, right, this.up);
-        vec3.normalize(dir, dir);
-    
-        this._MoveEye(dir, velocity);
-        this.update();
-    };
+proto.lookAt = function(eye, center, up) {
+  mat4.lookAt(scratch0, eye, center, up)
+  mat3.fromMat4(scratch0, scratch0)
+  quat.fromMat3(this.rotation, scratch0)
+  vec3.copy(this.center, center)
+  this.distance = vec3.distance(eye, center)
+}
 
-WebGLCamera.prototype.MoveEyeBackward = function (velocity) {
-        var dir   = vec3.fromValues(0, 0, 0);
-        var right = this.getEyeRightVector();
-        
-        vec3.cross(dir, right, this.up);
-        vec3.normalize(dir, dir);
-        vec3.negate(dir, dir);
-    
-        this._MoveEye(dir, velocity);        
-        this.update();
-    };   
+proto.Pan = function(dpan) {
+  var d = this.distance
+  scratch0[0] = -d*(dpan[0]||0)
+  scratch0[1] =  d*(dpan[1]||0)
+  scratch0[2] =  d*(dpan[2]||0)
+  vec3.transformQuat(scratch0, scratch0, this.rotation)
+  vec3.add(this.center, this.center, scratch0)
+}
 
-//============================ Left/rigt/top/down ============================//
+proto.Zoom = function(d) {
+  this.distance += d
+  if(this.distance < 0.0) {
+    this.distance = 0.0
+  }
+}
 
-WebGLCamera.prototype.MoveEyeLeft = function (velocity) {
-        this._MoveEye(this.getEyeLeftVector(), velocity);
-    };
+proto.GetZoom = function(d) {
+  return this.distance;
+}
 
-WebGLCamera.prototype.MoveEyeRight = function (velocity) {
-        this._MoveEye(this.getEyeRightVector(), velocity);
-    };    
+function QuatFromVec(out, da) {
+  var x = da[0]
+  var y = da[1]
+  var z = da[2]
+  var s = x*x + y*y
+  if(s > 1.0) {
+    s = 1.0
+  }
+  out[0] = -da[0]
+  out[1] =  da[1]
+  out[2] =  da[2] || Math.sqrt(1.0 - s)
+  out[3] =  0.0
+}
 
-WebGLCamera.prototype.MoveEyeUp = function (velocity) {
-        this.eye[1] += velocity;
-        this.update();
-    };
+proto.Rotate = function(da, db) {
+  QuatFromVec(scratch0, da)
+  QuatFromVec(scratch1, db)
+ 
+  quat.invert(scratch1, scratch1)
+  quat.multiply(scratch0, scratch0, scratch1)
+  if(quat.length(scratch0) < 1e-6) {
+    return
+  }
+  quat.multiply(this.rotation, this.rotation, scratch0)
+  quat.normalize(this.rotation, this.rotation)
+}
 
-WebGLCamera.prototype.MoveEyeDown = function (velocity) {
-        this.eye[1] -= velocity;
-        this.update();
-    };
+proto.GetProjectionMatrix=function(gl){
+  return gl["camera"].projectionMatrix;
+}
 
 
-WebGLCamera.prototype.getEyeForwardVector = function () {
-        var q  = this.eyeRotation;
-        var qx = q[0], qy = q[1], qz = q[2], qw = q[3];
-
-        var x =     2 * (qx * qz + qw * qy);
-        var y =     2 * (qy * qx - qw * qx);
-        var z = 1 - 2 * (qx * qx + qy * qy);
-
-        return vec3.fromValues(x, y, z);
-    };
-
-WebGLCamera.prototype.getEyeBackwardVector = function () {
-        var v = this.getEyeForwardVector();
-        vec3.negate(v, v);
-        return v;
-    };    
-
-WebGLCamera.prototype.getEyeRightVector = function () {
-        var q  = this.eyeRotation;
-        var qx = q[0], qy = q[1], qz = q[2], qw = q[3];
-
-        var x = 1 - 2 * (qy * qy + qz * qz);
-        var y =     2 * (qx * qy + qw * qz);
-        var z =     2 * (qx * qz - qw * qy);
-
-        return vec3.fromValues(x, y, z);
-    };
-
-WebGLCamera.prototype.getEyeLeftVector = function () {
-        var v = this.getEyeRightVector();
-        vec3.negate(v, v);
-        return v;
-    };
-
-WebGLCamera.prototype.getEyeUpVector = function () {
-        var q  = this.eyeRotation;
-        var qx = q[0], qy = q[1], qz = q[2], qw = q[3];
-
-        var x =     2 * (qx * qy - qw * qz);
-        var y = 1 - 2 * (qx * qx + qz * qz);
-        var z =     2 * (qy * qz + qw * qx);
-
-        return vec3.fromValues(x, y, z);
-    };
-
-WebGLCamera.prototype.getEyeDownVector = function () {
-        var v = this.getEyeUpVector();
-        vec3.negate(v, v);
-        return v;
-    };
+var webglcamera={
+   CreateOrbitCamera:function(eye, target, up) {
+     eye     = eye     || [0,0,-1]
+     target  = target  || [0,0,0]
+     up      = up      || [0,1,0]
+     var camera = new OrbitCamera(quat.create(), vec3.create(), 1.0)
+     camera.lookAt(eye, target, up)
+     return camera
+   }   
+};
