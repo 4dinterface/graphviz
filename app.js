@@ -266,16 +266,37 @@ function GraphView(){
          var obj=webgl.GetObjectFromMouse(AComp["state"]["gl"],AEvent.clientX,AEvent.clientY);
          if(obj){
             var xNode=obj["options"]["data"];
-            AComp["state"]["selectnodesids"]=[xNode.id];
-            AComp["state"]["selectnodeslinks"]=[];
             
-            xNode.nodesFrom.forEach(function(xItem){
-               AComp["state"]["selectnodeslinks"].push(xItem.id);
-            });
+            if(!AEvent.ctrlKey){
+               AComp["state"]["selectnodesids"]=[];
+               AComp["state"]["selectnodeslinks"]=[];
+            }
+            var xIndex=AComp["state"]["selectnodesids"].indexOf(xNode.id);
             
-            xNode.nodesTo.forEach(function(xItem){
-               AComp["state"]["selectnodeslinks"].push(xItem.id);               
-            });
+            if(xIndex<0){
+               AComp["state"]["selectnodesids"].push(xNode.id);
+               
+               xNode.nodesFrom.forEach(function(xItem){
+                  AComp["state"]["selectnodeslinks"].push(xItem.id);
+               });
+
+               xNode.nodesTo.forEach(function(xItem){
+                  AComp["state"]["selectnodeslinks"].push(xItem.id);               
+               });      
+            } else {
+               AComp["state"]["selectnodesids"].splice(xIndex,1);
+               xNode.nodesFrom.forEach(function(xItem){
+                  var xIndex=AComp["state"]["selectnodeslinks"].indexOf(xItem.id);
+                  AComp["state"]["selectnodeslinks"].splice(xIndex,1);
+               });
+
+               xNode.nodesTo.forEach(function(xItem){
+                  var xIndex=AComp["state"]["selectnodeslinks"].indexOf(xItem.id);  
+                  AComp["state"]["selectnodeslinks"].splice(xIndex,1);                  
+               });  
+            }
+            
+
             
             //console.log(obj["options"]["data"]);
          } else {
