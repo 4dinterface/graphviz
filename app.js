@@ -14,14 +14,22 @@ function GraphView(){
       var xCanvas=AComp["refs"]["canvas"]
       var xGL=webgl.Init(xCanvas);
       AComp["state"]["gl"]=xGL; 
-      var xCamera=webgl.GetCamera(xGL);
-      xCamera.setEye([0,0,100]);
+      var xCamera=AComp["state"]["camera"]=webgl.GetCamera(xGL);
+      xCamera.Zoom(200);
+      
+      var xCamera2=AComp["state"]["camera2"]=webgl.CreateOrbitCamera(xGL);
+      xCamera2.Zoom(200);
    }
    
    this.RenderWebGl=function(){
       var xGL=AComp["state"]["gl"]
       var xGraph=AComp["state"]["graph"];
-      var xCamera=webgl.GetCamera(xGL);
+      var xCamera=AComp["state"]["camera"];
+      var xCamera2=AComp["state"]["camera2"];
+      
+      
+      var xSNLinks=AComp["state"]["selectnodeslinks"]
+      var xSNIds=AComp["state"]["selectnodesids"]
      
       xGraph.layout.generate();    
       webgl.Clear(xGL,[0.0,0.0,0.0]);      
@@ -29,47 +37,102 @@ function GraphView(){
       
       xGraph["nodes"].forEach(function(xItem){
          var xPos=xItem.position;
-
-         webgl.SetProgram(xGL,"color",{
-            color:[1.0, 0.9, 0.0],
-            "bordercolor":[0.3, 0.2, 0.0],
-            "bordersize":0.03
-         }); 
-      
+         var xZoom=2;
+         var xBackground="";
+         if(xSNIds.indexOf(xItem.id)>-1){
+            webgl.SetProgram(xGL,"color",{
+               "color":[1.0, 0.5, 0.0],
+               "bordercolor":[0.3, 0.2, 0.0],
+               "bordersize":0.03
+            });
+            xBackground="#FF0";
+            xZoom=3;
+         } else if(xSNLinks.indexOf(xItem.id)>-1){
+            webgl.SetProgram(xGL,"color",{
+               "color":[1.0, 9.0, 0.0],
+               "bordercolor":[0.3, 0.2, 0.0],
+               "bordersize":0.03
+            });
+            xZoom=3;
+            xBackground="#dd0";
+         } else if(xSNIds.length>0){
+               webgl.SetProgram(xGL,"color",{
+                  "color":[0.3, 0.3, 0.3],
+                  "bordercolor":[0.3, 0.3, 0.3],
+                  "bordersize":0.03
+               });
+               xZoom=2;
+               xBackground="#888";
+         } else {
+            webgl.SetProgram(xGL,"color",{
+               "color":[1.0, 9.0, 0.0],
+               "bordercolor":[0.3, 0.2, 0.0],
+               "bordersize":0.03
+            });    
+            xZoom=2;
+            xBackground="#ff7";
+         }   
+         
+         
          webgl.DrawCube(xGL,{
             "x":xPos["x"]/xSize,
             "y":xPos["y"]/xSize,
             "z":xPos["z"]/xSize,
-            "scalex":2,
-            "scaley":2,
-            "scalez":2
-         });       
+            "scalex":xZoom,
+            "scaley":xZoom,
+            "scalez":xZoom,
+            "data":xItem
+         });      
+         
+         if(xZoom>2) xZoom=xZoom*1.5;
+         
+         var xPoint=[
+            xPos["x"]/xSize,
+            xPos["y"]/xSize,
+            xPos["z"]/xSize
+         ]
+         
+         //var xWorldMatrix=xCamera.GetWorldMatrix();
+         //xPoint=xCamera.TransformVector(xPoint);       
+         //vec3.transformMat4(xPoint, xPoint, xWorldMatrix);     
+         //webgl.SetCamera(xGL,xCamera2);
+         //xCamera.DisableRotation();
          
          webgl.DrawText(xGL,{
-            "x":xPos["x"]/xSize,
-            "y":xPos["y"]/xSize-2.2,
-            "z":xPos["z"]/xSize,
-            "rotatey":xCamera.orbitYaw*2,
-            "scalex":2,
-            "scaley":2,
-            "color":"#FFF",
-            "fontsize":"30px",
+            "x":xPoint[0],
+            "y":xPoint[1]+xZoom+0.2,
+            "z":xPoint[2],
+            "scalex":xZoom*2,
+            "scaley":xZoom/1.3,
+            "color":"#000",
+            "background":xBackground,
+            "fontsize":"35px",
             
             "widthtexture":128,
             "heightexture":64,
-            "text":"hello"
+            "text":"hello",
+            "data":xItem
          });
+         xCamera.EnableRotation()
+         
+         webgl.SetCamera(xGL,xCamera);
       });
       
       //line
-      webgl.SetProgram(xGL,"color",{ red:1, green:0.2, blue:0.3});
-      webgl.SetProgram(xGL,"color",{ color:[1, 1, 1], "bordercolor":[1, 1, 1]});
-  
-      //webgl.SetProgram(xGL,"multicolor"); 
-      
       xGraph["edges"].forEach(function(xItem){
          var xPosSource=xItem["source"]["position"];
-         var xPosTarget=xItem["target"]["position"];     
+         var xPosTarget=xItem["target"]["position"];  
+         
+         if (
+            (xSNIds.indexOf(xItem["source"].id)>-1||xSNLinks.indexOf(xItem["source"].id)>-1) &&
+            (xSNIds.indexOf(xItem["target"].id)>-1||xSNLinks.indexOf(xItem["target"].id)>-1)
+         ){
+            webgl.SetProgram(xGL,"color",{ color:[1, 0.8, 0], "bordercolor":[1, 0.8, 0]});
+         } else if(xSNIds.length>0){
+            webgl.SetProgram(xGL,"color",{ color:[0.5, 0.5, 0.5], "bordercolor":[0.5, 0.5, 0.5]});            
+         } else{
+            webgl.SetProgram(xGL,"color",{ color:[1, 1, 1], "bordercolor":[1, 1, 1]});                        
+         }  
             
           webgl.DrawLine(xGL,[
             xPosSource["x"]/xSize,
@@ -82,6 +145,10 @@ function GraphView(){
           ]);
          
       });   
+      
+      
+      //var xCanvasReal=AComp["refs"]["canvasreal"];
+      //canvasrenderer.RenderCommands(xGL,xCanvasReal.getContext("2d"));
    }
    
    this.RenderCanvas=function(AComp){
@@ -119,7 +186,7 @@ function GraphView(){
    
    
    this.Fill=function(AComp){
-      var xLimit=100;
+      var xLimit=30;
       var xGraph =new Graph({limit: xLimit})
       AComp["state"]["graph"]=xGraph;
       
@@ -162,23 +229,37 @@ function GraphView(){
    this.MouseDown=function(AComp,AEvent){
       AComp["state"]["mouselastx"]=AEvent.clientX    
       AComp["state"]["mouselasty"]=AEvent.clientY;
-      //console.log( AComp["state"]["mouselastx"] );
-      //console.log( AComp["state"]["mouselasty"] );
-      
-      //var xGraph=AComp["state"]["graph"];
-      //var xCamera=webgl.GetCamera(xGL);     
-      //var xSize=20;
-      
-      //xGraph["nodes"].forEach(function(xItem){
-      //var xPos=xItem.position;
-      
-      
+      AComp["state"]["mousedownx"]=AEvent.clientX    
+      AComp["state"]["mousedowny"]=AEvent.clientY;
       
       AComp["state"]["cameradrag"]=true;
    }
    
-   this.MouseUp=function(AComp){
+   this.MouseUp=function(AComp, AEvent){
       AComp["state"]["cameradrag"]=false;
+      if((Math.abs(AComp["state"]["mousedownx"]-AEvent.clientX) + Math.abs(AComp["state"]["mousedowny"]-AEvent.clientY))<8){
+         var obj=webgl.GetObjectFromMouse(AComp["state"]["gl"],AEvent.clientX,AEvent.clientY);
+         if(obj){
+            var xNode=obj["options"]["data"];
+            AComp["state"]["selectnodesids"]=[xNode.id];
+            AComp["state"]["selectnodeslinks"]=[];
+            
+            xNode.nodesFrom.forEach(function(xItem){
+               AComp["state"]["selectnodeslinks"].push(xItem.id);
+            });
+            
+            xNode.nodesTo.forEach(function(xItem){
+               AComp["state"]["selectnodeslinks"].push(xItem.id);               
+            });
+            
+            //console.log(obj["options"]["data"]);
+         } else {
+            AComp["state"]["selectnodesids"]=[];
+            AComp["state"]["selectnodeslinks"]=[]; 
+         }
+      }
+      AEvent.preventDefault();
+      AEvent.stopPropagation()
    }
    
   
@@ -214,6 +295,11 @@ function GraphView(){
 
       AComp["state"]["mouselastx"]=AEvent.offsetX;
       AComp["state"]["mouselasty"]=AEvent.offsetY;
+   }
+   
+   this.ContextMenu=function(AEvent){
+      AEvent.preventDefault();
+      return false;
    }
    
    //wheel
@@ -278,7 +364,7 @@ function GraphView(){
    
    var templateengine=new TemplateEngine();//temp code
    this.Template=templateengine.Compile(
-      '<canvas ref="canvas" width="1900px" height="800px" style="position:absolute;"></canvas>'+
+      '<canvas ref="canvas" style="position:absolute;"></canvas>'+
       '<div style="position:absolute;color:white;padding:5px;">'+
 //         '<a href="index2d.html" ref=button2d"> 2d mode </a>'+
 //         '<a href="index.html"   ref=button3d"> 3d mode </a>'+         
@@ -296,45 +382,47 @@ function GraphView(){
       
       //AComp["state"]["context"]=AComp["refs"]["canvas"].getContext("2d");
       AComp["state"]={
-         "zoom":3
+         "zoom":3,
+         "selectnodesids":[],
+         "selectnodeslinks":[]
       }
+      AComp.oncontextmenu=this.ContextMenu.bind(this);
       
       this.InitWebGl(AComp);
-      
-      //AComp["texture"]=webgl.CreateTextTexture( AComp["state"]["gl"], "xxx", 0,0);
-      
-      /*document.body.addEventListener('keydown',function(e){ 
-         this.KeyDown(AComp,e);
-      }.bind(this));*/
-      
-      
       return AComp;
    }
    
    this.ModifyBox=function(){
       AComp.style.width=document.body.clientWidth+"px";
       //console.log(document.body.offsetWidth);
-      AComp["refs"]["canvas"].style.width=document.body.clientWidth+"px";
-      AComp["refs"]["canvas"].style.height=document.body.clientHeight+"px";
+      AComp["refs"]["canvas"].width=document.body.clientWidth;
+      AComp["refs"]["canvas"].height=document.body.clientHeight;
+      
+      //debug
+      //var xCanvasReal=AComp["refs"]["canvasreal"];
+      //xCanvasReal.width=document.body.clientWidth;
+      //xCanvasReal.height=document.body.clientHeight;
+      
+      //this.InitWebGl(AComp);//temperary
+      var xGL=AComp["state"]["gl"];
+      webgl.Viewport(xGL,0,0,xGL.canvas.width,xGL.canvas.height);
       //webgl.GetCamera(AComp["state"]["gl"]).setAspectRatio(document.body.clientWidth/document.body.clientHeight);
-   }
-   
+   } 
 }
 
 var graphview=new GraphView();
 AComp=graphview.Create();    
+document.body.appendChild(AComp);
+graphview.ModifyBox(AComp);
 graphview.Fill(AComp);
+window.addEventListener("resize",graphview.ModifyBox.bind(graphview,AComp));
+
 
 +function animate(){
    requestAnimationFrame( animate );
-   //xGraph.RenderCanvas(AComp);   
    graphview.RenderWebGl(AComp);
 }()
 
-
-document.body.appendChild(AComp);
-window.addEventListener("resize",graphview.ModifyBox.bind(graphview,AComp));
-graphview.ModifyBox(AComp);
 
 document.body.addEventListener('mousedown',function(e){ 
          this.MouseDown(AComp,e);
@@ -350,6 +438,11 @@ document.body.addEventListener('mousedown',function(e){
       }.bind(graphview));
       
       document.body.addEventListener('mouseup',function(e){
+         var target = e.target || e.srcElement,
+         rect = target.getBoundingClientRect();
+         e.offsetX = e.offsetX || e.clientX - rect.left;
+         e.offsetY = e.offsetY || e.clientY - rect.top;
+         
          this.MouseUp(AComp,e);
       }.bind(graphview));
       

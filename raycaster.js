@@ -56,14 +56,14 @@ function Render(){
       "bordersize":0.01
    });
    
-   /*webgl.DrawCube(xGL,{
+   webgl.DrawCube(xGL,{
       "x":-2,
       "y":0,
       "z":0,
       "rotatey":alpha,      
       "rotatex":-alpha            
    });
-   */
+   
 
 };
 
@@ -79,7 +79,7 @@ setTimeout(function(){
 
 
 var xRealCtx=xCanvasReal.getContext("2d");
-var RenderCanvas=function(){
+/*var RenderCanvas=function(){
    var width=xCanvasReal.width;
    var height=xCanvasReal.height;
    var xCenterX=width/2;
@@ -125,6 +125,10 @@ var RenderCanvas=function(){
       RenderTriangle(xRealCtx,xTriangle);
    }
    //=========================================================================//   
+}*/
+
+RenderCanvas=function(){
+   canvasrenderer.RenderCommands(xGL,xRealCtx);
 }
 
 
@@ -132,27 +136,6 @@ var RenderCanvas=function(){
 document.body.addEventListener('mousedown',function(e){ 
     var x=e.offsetX;//e.offsetX/xCanvas.width;
     var y=e.offsetY;//e.offsetY/xCanvas.height
-    var aspect=xCanvas.width/xCanvas.height;
-   
-    var out=vec3.create();
-    var outmouse=vec3.create();
     
-    var xZoom=xCamera.GetZoom();
-    
-    var xViewMatrix=xCamera.view();
-    var xProjectionMatrix=xCamera.GetProjectionMatrix(xGL);
-    //mat4.multiply(xViewMatrix,xProjectionMatrix,xViewMatrix);
-    
-    //vec3.transformMat4(out, [-2,0,0], xViewMatrix);
-    //console.log(xCamera.rotation)
-    //rectx0=out[0]*(xZoom-1);
-    
-    vec3.transformQuat(out, [0,0,0], xCamera.rotation);
-   // console.log(out)
-    //rectx0=(rectx0*xCanvas.width)    
-    //rectx0=((out[0]-0.1)*(xZoom-1))*xCanvas.width;//+(xCanvas.width/2)
-    //rectx1=(out[0]+0.1)*xCanvas.width;
-    
-    //x=xCanvas.width
-    //console.log(rectx0, x);    
+    canvasrenderer.GetTrianglesFromProectionPoint(xGL,x,y,xRealCtx);
 });

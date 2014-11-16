@@ -28,7 +28,7 @@ function WebGLTextures(){
       ctx.canvas.height = AOptions["height"]||64;
 
       // fill it a certain color
-      ctx.fillStyle = AOptions["backgroundcolor"] || "rgb(255,0,0)";  // red
+      ctx.fillStyle = AOptions["background"] || "rgba(0,0,0,0)";  // red
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       // draw some text into it.

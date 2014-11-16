@@ -52,6 +52,8 @@ function WebGl(){
          options:AOptions
       })
    }
+   
+   
 
    //================================== Program   ============================//
    this.SetProgram=function(gl,AName,AOptions){
@@ -121,10 +123,11 @@ function WebGl(){
    }
    
    
-   this.Draw=function(AGL, AGeometry, AShaderProgram, mvMatrix) {
-      this.PushCommands(AGL,"Draw",{
+   this.Draw=function(AGL, AGeometry, AShaderProgram, mvMatrix,AOptions) {
+      this.PushCommands(AGL,"draw",{
          "geometry":AGeometry,
-         "mvmatrix":mvMatrix
+         "mvmatrix":mvMatrix,
+         "data":AOptions["data"]
       });
       
       //var xCamera=gl["camera"].getModelViewMatrix();
@@ -174,6 +177,12 @@ function WebGl(){
    }
 
    //================================ camera =================================//
+   this.CreateOrbitCamera=function(xGL,AOptions){
+      var xCamera=webglcamera.CreateOrbitCamera();
+      xCamera.projectionMatrix=webgl.initProjectionMatrix(xGL.canvas);
+      return xCamera;
+   }
+   
    this.GetCamera=function(xGL,AOptions){
       return xGL["camera"];
    }
@@ -182,6 +191,10 @@ function WebGl(){
       xGL["camera"]=ACamera;
    }
    
+   this.GetObjectFromMouse=function(AGL,AMouseX,AMouseY,debugcontext){
+      var triangles= canvasrenderer.GetTrianglesFromProectionPoint(AGL,AMouseX,AMouseY,debugcontext);
+      return (triangles.length>0)?triangles[0]["command"]:null;
+   }
    //======================= texture framebuffer  ============================//  
    this.InitTextureFramebuffer=function(gl,AOptions) {
       var AOptions=AOptions||{};

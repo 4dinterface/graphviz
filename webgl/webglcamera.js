@@ -20,15 +20,46 @@ proto.view = function(out) {
   scratch1[0] = scratch1[1] = 0.0
   scratch1[2] = -this.distance
   mat4.fromRotationTranslation(out,
-    quat.conjugate(scratch0, this.rotation),
-    scratch1)
+         quat.conjugate(scratch0, this.rotation),
+         scratch1)
+
   mat4.translate(out, out, vec3.negate(scratch0, this.center))
+ 
   return out
 }
+
+proto.GetWorldMatrix = function(AOutMatrix) {
+   AOutMatrix=AOutMatrix||mat4.create();
+   var xView=this.view();
+   var xProjectionMatrix=this.projectionMatrix;        
+   mat4.multiply(AOutMatrix, xProjectionMatrix,xView);
+   return AOutMatrix;
+}
+
+proto.TransformVector=function(coords){
+   var vec=[];
+   var xWorldMatrix=this.GetWorldMatrix();
+   var xModelViewMatrix=mat4.create();
+   mat4.translate(xModelViewMatrix, xModelViewMatrix, coords);
+   mat4.multiply(xModelViewMatrix,xWorldMatrix,xModelViewMatrix);
+   vec3.transformMat4(vec, [0,0,0], xModelViewMatrix); 
+   return vec;
+}
+
 
 proto.setEye=function(arr){
    this.Zoom(arr[2]);
 };
+
+proto.DisableRotation=function(){
+   this.realRotation=this.rotation;
+   this.rotation=quat.create();
+   this.isRotationDisable=true;
+}
+proto.EnableRotation=function(){
+   this.rotation=this.realRotation||this.rotation;
+   this.isRotationDisable=false;
+}
 
 proto.lookAt = function(eye, center, up) {
   mat4.lookAt(scratch0, eye, center, up)

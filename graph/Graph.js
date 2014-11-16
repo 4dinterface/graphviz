@@ -97,6 +97,7 @@ function Node(node_id) {
 Node.prototype.addConnectedTo = function(node) {
   if(this.connectedTo(node) === false) {
     this.nodesTo.push(node);
+    node.nodesFrom.push(this);
     return true;
   }
   return false;
