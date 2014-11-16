@@ -128,11 +128,17 @@ function WebGLGeometry(){
  
    
       // Координаты текстуры
-      var textureCoords = [
+     /* var textureCoords = [
              0.0, 0.0,
              0.0, 1.0,
              1.0, 1.0,
              1.0, 0.0
+      ];*/
+      var textureCoords = [
+             1.0, 0.0,
+             1.0, 1.0,
+             0.0, 1.0,
+             0.0, 0.0
       ];
                         
       return {

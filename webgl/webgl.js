@@ -86,15 +86,18 @@ function WebGl(){
    //============================ draw =======================================//   
    this.DrawText=function(AGL,AOptions){
       //generate text texture
-      AGL["temptexttexture"]=webgltextures.CreateTextTexture(AGL,AOptions);
- 
+  
       //set program and create geometry
       var xCube=webglgeometry.ConfigPlane(AGL,AOptions);   
       var xViewMatrix=this.CreateMatrix(AOptions); 
 
       AOptions["width"]=AOptions["widthtexture"];
       AOptions["height"]=AOptions["heighttexture"];
-      webgl.SetProgram(AGL,"texture",{"texture":AGL["temptexttexture"]});         
+      AGL["temptexttexture"]=webgltextures.CreateTextTexture(AGL,AOptions);
+ 
+      webgl.SetProgram(AGL,"texture",{
+         "texture":AGL["temptexttexture"]
+      });         
       
       //render program
       this.Draw(AGL,xCube,AGL["currentprogram"],xViewMatrix,AOptions);
@@ -108,11 +111,10 @@ function WebGl(){
       this.Draw(AGL,xLineGeometry,AGL["currentprogram"],xViewMatrix,AOptions);
    }
    
-   this.DrawPlane=function(AGL,AOptions){
-      
-      var xCube=webglgeometry.ConfigPlane(AGL,AOptions); 
+   this.DrawPlane=function(AGL,AOptions){ 
+      var xPlane=webglgeometry.ConfigPlane(AGL,AOptions); 
       var xViewMatrix=this.CreateMatrix(AOptions); 
-      this.Draw(AGL,xCube,AGL["currentprogram"],xViewMatrix,AOptions);
+      this.Draw(AGL,xPlane,AGL["currentprogram"],xViewMatrix,AOptions);
    }
    
    this.DrawCube=function(AGL,AOptions){     
